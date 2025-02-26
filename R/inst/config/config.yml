@@ -1,0 +1,60 @@
+# Replace single_cell_bulk_split by the explicit split of sc_library_patients
+default:
+  # path to the single cell file
+  single_cell_file: !expr system.file("data/source", "sc_Steen_Roider.rds", package = "harplication")
+  # path to an optional mapping file defining the mapping between ENSEMBL and HGNC symbols, because
+  # requesting the info from the ENSEMBL server often fails
+  mapping_file: !expr system.file("data/source", "mapping.rds", package = "harplication")
+  # path to directory where data is read from and written to
+  base_dir: !expr system.file("data/generated", package = "harplication")
+  # the name of the simulation (depending on different config params we get different simulation scenarios)
+  simulation_name: roider_steen_dist
+  # the total amount of trainig bulks
+  amount_train_bulks: 50
+  # the total amount of test bulks
+  amount_test_bulks: 40
+  # the relative amount of PATIENTS (that entered the bulk simulations) that are used to
+  # generate bulks used for trining harp/DTD
+  bulks_simulation_train_split: 0.5
+  # these are the parameters used in the distribution for simulating cell death
+  kill_cells_mean: 0.5
+  kill_cells_std: 0.2
+  # if this value is not null we will randomly distort this relative amount of genes 
+  # in order to simulate gene specific batch effects
+  percentage_genes_to_distort: NULL
+  # these are the parameters used in the distribution for simulating gene distortion
+  distortion_factor_mean: 1
+  distortion_factor_std: 5
+  # the number of simulation runs
+  number_simulation_runs: 1
+  # the sequence of regularization parameters used in cross validation for harp
+  lambda_seq: !expr c(seq(0, 0.1, by = 0.01), seq(0.2, 1, by = 0.1), 2^seq(1, 15, by = 1))
+  # the algorithms to be used in benchmarking
+  # Note: As CIBERSORTx does not provide any source code we need to perform the computations
+  # externally
+  algorithms: !expr c("Harp", "DTD", "BayesPrism", "MuSiC")
+  # base_name of the txt files storing the cibersort data
+  cibersort_filename: CIBERSORTx_Adjusted
+  # The different subalgorithms of CIBERSORTx
+  # lm22 uses the LM22 reference for deconvolution
+  # sc builds a reference from single cell data
+  # harp uses the reference fitted by harp 
+  cibersort_algorithms: c("lm22", "sc", "harp")
+  # If the script is used standalone or tooled via another script, in order to pass
+  # different configuration parameters
+  standalone: true
+
+# Sys.setenv(R_CONFIG_ACTIVE = "roider_steen_dist")
+roider_steen_dist:
+  simulation_name: roider_steen_dist
+  percentage_genes_to_distort: 0.4
+  algorithms: !expr c("Harp", "DTD", "music", "bp_subtypes", "bp_harp", "cibersort")
+  cibersort_algorithms: !expr c("lm22", "sc", "harp")
+
+# Sys.setenv(R_CONFIG_ACTIVE = "roider_steen_dist_test_samples")
+roider_steen_dist_test_samples:
+  simulation_name: roider_steen_dist_test_samples
+  amount_train_bulks: 160
+  amount_test_bulks: 40
+  algorithms: !expr c("Harp")
+  standalone: false

@@ -1,0 +1,14 @@
+data/generated/*
+data/source/*
+deprecated_tests
+man/*
+R/inst/testdata/roider_steen_dist/*
+.nfs*
+deprecated/*
+
+
+# Get correct folder structure
+!data/generated/.gitkeep
+!data/source/.gitkeep
+!R/inst/testdata/roider_steen_dist/.gitkeep 
+inst/doc

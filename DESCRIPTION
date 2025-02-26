@@ -1,0 +1,29 @@
+Package: harplication
+Title: An R package tooling harp in order to apply it to simulation and real world deconvolution scenarios
+Version: 0.0.1
+Authors@R: c(
+    person(given = "Zahra", family = "Nozari", role = c("aut", "cre"), email = "Zahra.Nozari@klinik.uni-regensburg.de"),
+    person(given = "Paul", family = "Hüttl", role = c("ctb"), email = "paul.huettl@ur.de"))
+Description: HARP is a computational method that improves tissue deconvolution accuracy by addressing both biological and technical inconsistencies in the data. The method harmonizes discrepancies between experimentally measured tissue compositions, deconvolution results, and reconstructed bulk profiles. In this package we tool harp in order to easily apply it to deconvolution tasks and reproduce the results of pur publication.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports:
+    DTD (== 1.2.0),
+    tidyverse,
+    dplyr,
+    SummarizedExperiment,
+    ggplot2
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    Matrix (== 1.6.1),
+    SeuratObject (== 4.1.4),
+    Seurat (== 4.4.0), 
+    BayesPrism,
+    MuSiC,
+    gridExtra
+Config/testthat/edition: 3
+VignetteBuilder: knitr
