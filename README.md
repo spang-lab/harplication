@@ -2,6 +2,10 @@
 
 Applying **harp** to real world and simulated data, in order to show its advantage compared to established deconvolution tools.
 
+<div style="text-align: center">
+    <img src="harp_schematic.png" width=500 alt="harpschematics"/>
+</div>
+
 For detailed explanation and examples of the main package functions of harp we refer to the corresponding R package
 and its documentation available under [Spang-Lab GitHub](https://github.com/spang-lab/harp).
 
@@ -11,6 +15,9 @@ Make sure to install the `harp` package
 library(devtools)
 devtools::install_github("spang-lab/harp")
 ```
+
+The input data for reproducing the results of the simulations is provided under https://doi.org/10.5281/zenodo.10568550.\
+The input data for the real world case studies is provided under https://doi.org/10.5281/zenodo.14929934.
 
 
 ## Repo Structure
@@ -186,7 +193,7 @@ The data sets we used for deconvolution of RNA-seq data are from the following s
 - Microarray based reference (LM22) from [Robust enumeration of cell subsets from tissue expression profiles](https://www.nature.com/articles/nmeth.3337) by **Newman et al., 2015**, provided by [CIBERSORTx](https://cibersortx.stanford.edu/).
 - Micoarray gene expression data from [Robust enumeration of cell subsets from tissue expression profiles](https://www.nature.com/articles/nmeth.3337) by **Newman et al., 2015**, accessible under [GSE65133](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE65133) and the respective flow cytometry data is accessible under [GSE65133](https://www.ncbi.nlm.nih.gov/geo/geo2r/?acc=GSE65133) and in the analysis of [Leveraging heterogeneity across multiple datasets increases cell-mixture deconvolution accuracy and reduces biological and technical biases](https://www.nature.com/articles/s41467-018-07242-6) by **Vallania et al., 2018**. 
 
-The preprocessed data as used in our paper are accessible on [Zenodo](). For reproducing the results of the benchmark and anaylsis of our manuscript, please download the following files and move them into `data/source`. 
+The preprocessed data as used in our paper are accessible on [Zenodo](https://doi.org/10.5281/zenodo.14929934). For reproducing the results of the benchmark and anaylsis of our manuscript, please download the following files and move them into `data/source`. 
  - File `processed_sdy67_rnaseq_ref.rds` for the analysis of the deconvolution benchmark of bulkRNA-seq expression data using a reference derived from sortedRNA-seq data.
  - File `processed_sdy67_microarray_ref.rds` for the analysis of the deconvolution benchmark of bulkRNA-seq expression data using a reference derived from microarray data (LM22).
  - File `processed_GSE65133.rds` for analysis of deconvolution benchmark of expression data using a reference derived from microarray data (LM22).
