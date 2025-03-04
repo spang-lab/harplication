@@ -9,6 +9,8 @@ Applying **harp** to real world and simulated data, in order to show its advanta
 For detailed explanation and examples of the main package functions of harp we refer to the corresponding R package
 and its documentation available under [Spang-Lab GitHub](https://github.com/spang-lab/harp).
 
+For the preprint of our manscript, see https://www.biorxiv.org/content/10.1101/2025.02.26.640330v1
+
 Make sure to install the `harp` package
 
 ```r
@@ -276,4 +278,5 @@ source("scripts/real_data/UMAP/umap_reference.R")
 
 The results of our work are comprised in the following publication:\
 **Harp: A Platform Independent Deconvolution Tool** by\
-Zahra Nozari, Paul Hüttl, Jakob Simeth, Marian Schön, James A. Hutchinson, Rainer Spang, 2025.
+Zahra Nozari, Paul Hüttl, Jakob Simeth, Marian Schön, James A. Hutchinson, Rainer Spang, 2025.\
+Preprint available under: https://www.biorxiv.org/content/10.1101/2025.02.26.640330v1.
