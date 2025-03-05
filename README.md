@@ -73,7 +73,6 @@ gene expressions in order to simulate further technological variance.
 
 For the main simulation benchmark we configure and run
 ```r
-Sys.setenv(R_CONFIG_ACTIVE = "roider_steen_dist")
 devtools::document()
 source("scripts/simulation/generate_input.R")
 ```
@@ -130,7 +129,6 @@ This section reproduces the pie charts providing an overview over the patients p
 in both single cell studies used for simulations
 
 ```r
-Sys.setenv(R_CONFIG_ACTIVE = "roider_steen_dist")
 source("scripts/simulation/sc_study_overview.R")
 ```
 
@@ -140,7 +138,6 @@ source("scripts/simulation/sc_study_overview.R")
 This section reproduces the bulk overview plots of our manuscript.
 This needs to be executed after [generation of input data](#input-data-generation).
 ```r
-Sys.setenv(R_CONFIG_ACTIVE = "roider_steen_dist")
 source("scripts/simulation/bulk_samples_overview.R")
 ```
 
@@ -149,7 +146,6 @@ source("scripts/simulation/bulk_samples_overview.R")
 This section reproduces the respective section of our manuscript.
 This needs to be executed after [generation of input data](#input-data-generation).
 ```r
-Sys.setenv(R_CONFIG_ACTIVE = "roider_steen_no_dist")
 source("scripts/simulation/compare_cell_death.R")
 ```
 
@@ -160,7 +156,6 @@ values for the regularization parameter lambda.
 Additionally the plots depicting the benchmarked quality metrics in dependence of lambda are plotted.
 This script needs to be executed after [generation of input data](#input-data-generation).
 ```r
-Sys.setenv(R_CONFIG_ACTIVE = "roider_steen_dist")
 source("scripts/simulation/compute_profiles_varying_lambda.R")
 source("scripts/simulation/plot_profiles_varying_lambda.R")
 source("scripts/simulation/plot_profiles_umap_varying_lambda.R")
@@ -171,7 +166,6 @@ source("scripts/simulation/plot_profiles_umap_varying_lambda.R")
 This section reproduces the plot showing the evolution of the regularization parameter lambda during cross validation in Harp.
 This scripts needs to be executed after [benchmarking Harp against other deconvolution tools](#benchmarking-harp-against-other-deconvolution-tools).
 ```r
-Sys.setenv(R_CONFIG_ACTIVE = "roider_steen_dist")
 source("scripts/simulation/plot_lambda_trajectories.R")
 ```
 
