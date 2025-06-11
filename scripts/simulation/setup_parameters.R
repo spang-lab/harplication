@@ -18,6 +18,8 @@ test_sc_patients <- config$test_sc_patients
 bulk_train_split <- config$bulk_train_split
 kill_cells_mean <- config$kill_cells_mean
 kill_cells_std <- config$kill_cells_std
+noise_mean <- config$noise_mean
+noise_std <- config$noise_std
 lambda_seq <- config$lambda_seq
 algorithms <- config$algorithms
 percentage_genes_to_distort <- config$percentage_genes_to_distort

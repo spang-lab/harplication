@@ -10,7 +10,7 @@ default:
   # the name of the simulation (depending on different config params we get different simulation scenarios)
   simulation_name: roider_steen_dist
   # the total amount of trainig bulks
-  amount_train_bulks: 50
+  amount_train_bulks: 20
   # the total amount of test bulks
   amount_test_bulks: 40
   # the relative amount of PATIENTS (that entered the bulk simulations) that are used to
@@ -19,9 +19,12 @@ default:
   # these are the parameters used in the distribution for simulating cell death
   kill_cells_mean: 0.5
   kill_cells_std: 0.2
+  # these are the parameters used in the distribution to simulate random noise on the proportions
+  noise_mean: 0.9
+  noise_std: 0.2
   # if this value is not null we will randomly distort this relative amount of genes 
   # in order to simulate gene specific batch effects
-  percentage_genes_to_distort: 0.4
+  percentage_genes_to_distort: NULL
   # these are the parameters used in the distribution for simulating gene distortion
   distortion_factor_mean: 1
   distortion_factor_std: 5
@@ -32,7 +35,7 @@ default:
   # the algorithms to be used in benchmarking
   # Note: As CIBERSORTx does not provide any source code we need to perform the computations
   # externally
-  algorithms: !expr c("Harp", "DTD", "music", "bp_subtypes", "bp_harp", "cibersort")
+  algorithms: !expr c("Harp", "bp_subtypes", "music", "cibersort")
   # base_name of the txt files storing the cibersort data
   cibersort_filename: CIBERSORTx_Adjusted
   # The different subalgorithms of CIBERSORTx
@@ -43,6 +46,22 @@ default:
   # If the script is used standalone or tooled via another script, in order to pass
   # different configuration parameters
   standalone: true
+
+
+# Sys.setenv(R_CONFIG_ACTIVE = "roider_steen_no_dist")
+roider_steen_no_dist:
+  simulation_name: roider_steen_no_dist
+  percentage_genes_to_distort: NULL
+  algorithms: !expr c("Harp")
+  cibersort_algorithms: !expr c()
+
+# Sys.setenv(R_CONFIG_ACTIVE = "roider_steen_dist")
+roider_steen_dist:
+  simulation_name: roider_steen_dist
+  number_simulation_runs: 5
+  percentage_genes_to_distort: 0.4
+  algorithms: !expr c("Harp", "bp_subtypes", "music", "cibersort")
+  cibersort_algorithms: !expr c("lm22", "sc", "harp")
 
 # Sys.setenv(R_CONFIG_ACTIVE = "roider_steen_dist_test_samples")
 roider_steen_dist_test_samples:
