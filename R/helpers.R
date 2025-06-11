@@ -62,7 +62,7 @@ compute_bulk_cse <- function(composition, sclong) {
     scwide <- sclong %>% pivot_wider(names_from = gene, values_from = expression, values_fill = 0)
     celltype_comp <- composition %>%
         inner_join(scwide, by = "cell_id")
-    excluded_names <- intersect(names(celltype_comp), c('bulk_id', 'cell_id', 'celltype', 'weight', 'Patient', 'testtrain', 'origin'))
+    excluded_names <- intersect(names(celltype_comp), c("bulk_id", "cell_id", "celltype", "weight", "Patient", "testtrain", "origin"))
     celltype_comp <- celltype_comp %>%
         pivot_longer(cols = -excluded_names, names_to = "gene", values_to = "expression") %>%
         # the cse equals each weighted sc profile cumulated over the respective cell type
@@ -92,7 +92,8 @@ convert_weight_to_proportion <- function(weight, reference, bulk_counts) {
         relocate(bulk_id)
 
     reshaped_bulk_counts <- tibble(bulk_id = colnames(bulk_counts)) %>%
-        cbind(as_tibble(t(bulk_counts))) %>% as_tibble()
+        cbind(as_tibble(t(bulk_counts))) %>%
+        as_tibble()
 
     cse <- compute_cse(reshaped_weights, ref_wide)
     proportions <- compute_proportion(reshaped_bulk_counts, cse)
@@ -131,7 +132,7 @@ kill_cells <- function(proportions, celltypes, kill_cells_mean = 1, kill_cells_s
     # but we limit the death to a lower bound, in order to keep at least 20 percent of the cells
     csdr_values <- pmax(0.2, pmin(abs(rnorm(length(celltypes), kill_cells_mean, kill_cells_std)), 1))
     csdr_keys <- celltypes
-    cell_death_rates <- tibble(celltype = csdr_keys, rate  = csdr_values)
+    cell_death_rates <- tibble(celltype = csdr_keys, rate = csdr_values)
     csdr <- list()
     csdr[csdr_keys] <- csdr_values
     for (key in csdr_keys) {
@@ -139,6 +140,23 @@ kill_cells <- function(proportions, celltypes, kill_cells_mean = 1, kill_cells_s
         proportions <- proportions %>% mutate(prp = ifelse(celltype == key, csdr[[key]] * prp, prp))
     }
     return(list(proportions = proportions, cell_death_rates = cell_death_rates))
+}
+
+#' simulate noisy FACS measurments by adding random multiplicative noise
+#' @export
+noise_prp <- function(proportions, mean = 0.9, std = 0.2, norm = TRUE) {
+    len <- proportions %>%
+        pull(prp) %>%
+        length()
+    rates <- pmax(0.2, pmin(abs(rnorm(len, mean, std)), 1))
+    proportions <- proportions %>% mutate(prp = prp * rates)
+    if (norm) {
+        proportions <- proportions %>%
+            group_by(bulk_id) %>%
+            mutate(prp = prp / sum(prp)) %>%
+            ungroup()
+    }
+    return(list(proportions = proportions, rates = rates))
 }
 
 #' function to map gene ENSEMBL names to HGNC symbols
@@ -191,9 +209,11 @@ map_feature_names <- function(
                         )
                     )
                 }
-                mart <- useEnsembl(biomart = "ensembl", 
-                   dataset = "hsapiens_gene_ensembl", 
-                   mirror = "useast")
+                mart <- useEnsembl(
+                    biomart = "ensembl",
+                    dataset = "hsapiens_gene_ensembl",
+                    mirror = "useast"
+                )
 
                 tmp <- try(
                     mapper <- getBM(
@@ -281,4 +301,3 @@ convert_summarized_experiment_bulk_pheno <- function(bulk_pheno_summarized_exper
     colnames(bulk_pheno) <- colData(bulk_pheno_summarized_experiment)$bulk_id
     return(bulk_pheno)
 }
-
