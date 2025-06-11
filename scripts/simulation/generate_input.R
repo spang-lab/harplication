@@ -50,18 +50,22 @@ for (irun in 1:number_simulation_runs) {
 
     sc_summarized_experiment <- SummarizedExperiment(list(counts = sc_counts),
         rowData = DataFrame(gene.name = gene_names),
-        colData = DataFrame(cell_id = cell_id, celltype = celltype))
+        colData = DataFrame(cell_id = cell_id, celltype = celltype)
+    )
     saveRDS(sc_summarized_experiment, file.path(output_dir, paste0("sc_summarized_experiment_run_", irun, ".rds")))
     # in order to separate the training samples for HARP on the patient level
-    bulk_patients <- sc_bulksim %>% pull(Patient) %>% unique()
+    bulk_patients <- sc_bulksim %>%
+        pull(Patient) %>%
+        unique()
     # random split of single cell patients
     if (!is.null(bulks_simulation_train_split)) {
         train_pos <- sample(seq_along(bulk_patients),
-                round(bulks_simulation_train_split * length(bulk_patients)),
-                replace = FALSE)
+            round(bulks_simulation_train_split * length(bulk_patients)),
+            replace = FALSE
+        )
         train_patients <- bulk_patients[train_pos]
         test_patients <- bulk_patients[-train_pos]
-    # customized split
+        # customized split
     } else {
         if (length(train_sc_patients) > 0 && length(test_sc_patients) > 0) {
             train_patients <- train_sc_patients
@@ -80,13 +84,15 @@ for (irun in 1:number_simulation_runs) {
 
     # generate now train/test artificial bulks
     train_bulks_sim <- simulate_bulks(sc_bulksim,
-                amount_train_bulks,
-                train_patients,
-                fuzzyness = 0.3)
+        amount_train_bulks,
+        train_patients,
+        fuzzyness = 0.3
+    )
     test_bulks_sim <- simulate_bulks(sc_bulksim,
-                amount_test_bulks,
-                test_patients,
-                fuzzyness = 0.3)
+        amount_test_bulks,
+        test_patients,
+        fuzzyness = 0.3
+    )
 
     # Combine train and test bulks to a single tibble with a training and test block
     test_bulks_sim$bulks <- test_bulks_sim$bulks %>% mutate(bulk_id = bulk_id + amount_train_bulks)
@@ -115,7 +121,7 @@ for (irun in 1:number_simulation_runs) {
     # a fixed percentage of genes
     if (!is.null(percentage_genes_to_distort)) {
         print("Distorting bulks")
-        dist_bulks <- distort_bulks(bulks_sim, percentage_genes_to_distort,  distortion_factor_mean, distortion_factor_std)
+        dist_bulks <- distort_bulks(bulks_sim, percentage_genes_to_distort, distortion_factor_mean, distortion_factor_std)
         # overwriting true bulks, everything downstream works on distorted bulks!
         bulks_sim <- dist_bulks$bulks_sim
         modified_genes <- dist_bulks$modified_genes
@@ -123,7 +129,7 @@ for (irun in 1:number_simulation_runs) {
         print("Done distorting bulks")
     }
     train_bulks <- bulks_sim$bulks %>% filter(bulk_id %in% train_samples)
-    bulk_counts <-  train_bulks %>%
+    bulk_counts <- train_bulks %>%
         dplyr::select(-bulk_id) %>%
         as.matrix()
 
@@ -133,9 +139,12 @@ for (irun in 1:number_simulation_runs) {
     bulk_counts <- DTD::normalize_to_count(t(bulk_counts))
     bulk_summarized_experiment_train <- SummarizedExperiment(list(counts = bulk_counts),
         rowData = DataFrame(gene.name = gene_names),
-        colData = DataFrame(bulk_id = bulk_id))
-    saveRDS(bulk_summarized_experiment_train,
-        file.path(output_dir, paste0("bulk_train_summarized_experiment_run_", irun, ".rds")))
+        colData = DataFrame(bulk_id = bulk_id)
+    )
+    saveRDS(
+        bulk_summarized_experiment_train,
+        file.path(output_dir, paste0("bulk_train_summarized_experiment_run_", irun, ".rds"))
+    )
 
     test_bulks <- bulks_sim$bulks %>% filter(bulk_id %in% test_samples)
     bulk_counts <- test_bulks %>%
@@ -148,14 +157,15 @@ for (irun in 1:number_simulation_runs) {
     bulk_counts <- DTD::normalize_to_count(t(bulk_counts))
     bulk_summarized_experiment_test <- SummarizedExperiment(list(counts = bulk_counts),
         rowData = DataFrame(gene.name = gene_names),
-        colData = DataFrame(bulk_id = bulk_id))
+        colData = DataFrame(bulk_id = bulk_id)
+    )
     saveRDS(
         bulk_summarized_experiment_test,
         file.path(output_dir, paste0("bulk_test_summarized_experiment_run_", irun, ".rds"))
     )
 
     print("Computing bulk pheno for Harp (true/death)")
-    bulk_pheno <- compute_bulk_pheno_harp(true_prp %>% filter(bulk_id %in% train_samples), sc_library, kill_cells_mean, kill_cells_std)
+    bulk_pheno <- compute_bulk_pheno_harp(true_prp %>% filter(bulk_id %in% train_samples), sc_library, kill_cells_mean, kill_cells_std, noise_mean, noise_std)
     celltype <- rownames(bulk_pheno$true)
     bulk_id <- colnames(bulk_pheno$true)
     bulk_pheno_experiment <- SummarizedExperiment(list(counts = bulk_pheno$true),
@@ -171,6 +181,14 @@ for (irun in 1:number_simulation_runs) {
     )
     saveRDS(bulk_pheno_experiment, file.path(output_dir, paste0("bulk_pheno_train_cdeath_summarized_experiment_run_", irun, ".rds")))
     saveRDS(bulk_pheno$cell_death_rates, file.path(output_dir, paste0("bulk_pheno_cell_death_rates_", irun, ".rds")))
+    celltype <- rownames(bulk_pheno$noise)
+    bulk_id <- colnames(bulk_pheno$noise)
+    bulk_pheno_experiment <- SummarizedExperiment(list(counts = bulk_pheno$noise),
+        rowData = DataFrame(celltype = celltype),
+        colData = DataFrame(bulk_id = bulk_id)
+    )
+    saveRDS(bulk_pheno_experiment, file.path(output_dir, paste0("bulk_pheno_train_noise_summarized_experiment_run_", irun, ".rds")))
+    saveRDS(bulk_pheno$noise_rates, file.path(output_dir, paste0("bulk_pheno_noise_rates_", irun, ".rds")))
 }
 
 sink()
