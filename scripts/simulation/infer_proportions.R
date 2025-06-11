@@ -37,7 +37,7 @@ if (!is.null(subset_bulks)) {
 } else {
     results_dir <- output_dir
 }
-con <- file(file.path(results_dir, "infer_proportions_simulation.log"))
+con <- file(file.path(results_dir, "infer_proportions_simulation_bp_harp.log"))
 sink(con)
 sink(con, type = "message")
 
@@ -57,7 +57,7 @@ for (irun in 1:number_simulation_runs) {
     # We provide the option to subset bulks, i.e. use only a subset of bulks in training.
     if (!is.null(subset_bulks)) {
         bulk_ids <- sample(bulk_train_summarized_experiment$bulk_id, subset_bulks, replace = FALSE)
-        bulk_train_summarized_experiment <- bulk_train_summarized_experiment[,bulk_train_summarized_experiment$bulk_id %in% bulk_ids]
+        bulk_train_summarized_experiment <- bulk_train_summarized_experiment[, bulk_train_summarized_experiment$bulk_id %in% bulk_ids]
         bulk_pheno_train_true_summarized_experiment <- bulk_pheno_train_true_summarized_experiment[, bulk_pheno_train_true_summarized_experiment$bulk_id %in% bulk_ids]
     }
     # we take maximally 5 folds, but if the number of train bulks is to small we choose the number of folds,
@@ -71,11 +71,14 @@ for (irun in 1:number_simulation_runs) {
         n_folds <- 5
     }
     bulk_test_summarized_experiment <- readRDS(
-        file.path(output_dir, paste0("bulk_test_summarized_experiment_run_", irun, ".rds")))
+        file.path(output_dir, paste0("bulk_test_summarized_experiment_run_", irun, ".rds"))
+    )
     bulk_pheno_train_cdeath_summarized_experiment <- readRDS(
-        file.path(output_dir, paste0("bulk_pheno_train_cdeath_summarized_experiment_run_", irun, ".rds")))
+        file.path(output_dir, paste0("bulk_pheno_train_cdeath_summarized_experiment_run_", irun, ".rds"))
+    )
     proportions_true <- readRDS(
-        file.path(output_dir, paste0("proportions_true_run_", irun, ".rds")))
+        file.path(output_dir, paste0("proportions_true_run_", irun, ".rds"))
+    )
     proportions_all <- rbind(
         proportions_all,
         proportions_true
@@ -92,7 +95,8 @@ for (irun in 1:number_simulation_runs) {
             bulk_test_summarized_experiment = bulk_test_summarized_experiment,
             bulk_pheno_train_summarized_experiment = bulk_pheno_train_true_summarized_experiment,
             n_folds = n_folds,
-            lambda_seq = lambda_seq)
+            lambda_seq = lambda_seq
+        )
         print("Done with Harp")
         saveRDS(harp_true$output_harp, file.path(results_dir, paste0("output_harp_true_run_", irun, ".rds")))
         harp_p_true <- harp_true$proportions %>% add_column(run = irun, algo = "harp_true")
@@ -115,7 +119,8 @@ for (irun in 1:number_simulation_runs) {
         saveRDS(model, file.path(results_dir, paste0("DTD_model_run_", irun, ".rds")))
         proportions_all <- rbind(
             proportions_all,
-            DTD_p)
+            DTD_p
+        )
     }
 
     # COMPETING ALGORITHMS on TEST SET
@@ -194,11 +199,13 @@ for (irun in 1:number_simulation_runs) {
             print("Inferring BayesPrism proportions using Harp reference")
             sc_summarized_experiment_harp <- SummarizedExperiment(list(counts = harp_ref),
                 rowData = DataFrame(gene.name = rownames(harp_ref)),
-                colData = DataFrame(cell_id = colnames(harp_ref), celltype = colnames(harp_ref)))
+                colData = DataFrame(cell_id = colnames(harp_ref), celltype = colnames(harp_ref))
+            )
             bp.res <- fit_bulks_bayesPrism(sc_summarized_experiment_harp,
                 bulk_test_summarized_experiment,
                 clustering = NULL,
-                input.type = "GEP")
+                input.type = "GEP"
+            )
             bayesPrism_p <- get_bayesPrism_proportions(bp.res) %>% add_column(run = irun, algo = "bp_harp")
             saveRDS(bayesPrism_p, file.path(results_dir, paste0("proportions_bayesPrism_harp_run_", irun, ".rds")))
             proportions_all <- rbind(
