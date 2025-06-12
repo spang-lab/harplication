@@ -274,7 +274,137 @@ plot_correlation_bar <- function(correlations) {
     return(bar_summary)
 }
 
+#' get_all_individual_eval_statistics_bars
+#' @description this is a function to get all of the quality scores, R, RMSD,AAD and  cell type wise correlations.
+#' @param proportions data frame  with bulk_id, celltye,prp, algo in its column
+#' @export
+get_all_individual_eval_statistics_bars <- function(proportions) {
+    # calculation of quality matrices
+    proportion_matrices <- generate_proportion_matrices(proportions = proportions)
+    music_metrics <- perform_evaluation(
+        proportion_matrices = proportion_matrices,
+        output_dir = output_dir,
+        simulation = data_name
+    )
+    music_metrics <- music_metrics$eval_statistics %>% as_tibble(rownames = "algo")
+    correlations <- correlate_celltype(proportions = proportions)
+    sample_correlations <- correlate_samples(proportions = proportions)
+    return(list(music_metrics = music_metrics, correlations = correlations, sample_correlations = sample_correlations))
+}
 
+#' one_sided_z_test
+#' @description this function performs the statistcial testing for significant imporvement of one deconvolution algorithm above another
+#' via the method described in BayesPrism supplemental section Statistical test on cell type level Pearson correlation coefficients.
+#' We check both the celltype wise correlation coefficient as well as the sample wise correlation coefficient
+#' The p value of the z test is returned
+#' @param proportions data frame  with bulk_id, celltye,prp, algo in its column
+#' @param algos vector of strings the algorithms to compare. The test will check if algos[1] is significantly better than algos[2]
+#' so the order of algorithms matters.
+#' @export
+one_sided_z_test <- function(proportions_all, algos = c("harp_true", "bp_subtypes"), irun = 1) {
+    fisher_z_transform <- function(r) {
+        0.5 * log((1 + r) / (1 - r))
+    }
+    if (length(algos) > 2) {
+        stop("This test compares two algorithms at a time")
+    }
+    print(paste("Checking if", algos[1], "is significantly better than", algos[2]))
+
+
+    # Prepare proportions
+    proportions_all <- proportions_all %>% filter(run == irun)
+    test_ids <- proportions_all %>%
+        group_by(algo) %>%
+        summarise(bulk_ids = list(unique(bulk_id))) %>%
+        pull(bulk_ids) %>%
+        Reduce(intersect, .)
+    proportions_all <- proportions_all %>% filter(bulk_id %in% test_ids)
+
+    # Get correlations for two algos to compare, and apply fisher transform z
+    celltypewise_correlation <- correlate_celltype(proportions = proportions_all)
+    sample_correlation <- correlate_samples(proportions = proportions_all)
+
+    # Get the common cell types between the two algorithms
+    celltypes_algo1 <- celltypewise_correlation %>%
+        filter(algo == algos[1]) %>%
+        pull(celltype)
+
+    celltypes_algo2 <- celltypewise_correlation %>%
+        filter(algo == algos[2]) %>%
+        pull(celltype)
+
+    # Find mutual cell types
+    mutual_celltypes <- intersect(celltypes_algo1, celltypes_algo2)
+
+    if (length(mutual_celltypes) == 0) {
+        stop("No mutual cell types found between the two algorithms")
+    }
+
+    print(paste("Found", length(mutual_celltypes), "mutual cell types"))
+
+    ct_cor_algo <- list()
+    s_cor_algo <- list()
+    sample_size <- list()
+
+    for (alg in algos) {
+        bulk_ids <- proportions_all %>%
+            filter(algo == alg) %>%
+            pull(bulk_id) %>%
+            unique()
+        sample_size[[alg]] <- length(bulk_ids)
+
+        # Filter for mutual cell types
+        ct_cor_algo[[alg]] <- celltypewise_correlation %>%
+            filter(algo == alg, celltype %in% mutual_celltypes) %>%
+            mutate(correlation = fisher_z_transform(correlation)) %>%
+            arrange(celltype) %>%
+            pull(correlation)
+
+        s_cor_algo[[alg]] <- sample_correlation %>%
+            filter(algo == alg) %>%
+            mutate(correlation = fisher_z_transform(correlation)) %>%
+            arrange(bulk_id) %>%
+            pull(correlation)
+    }
+
+    if (length(ct_cor_algo[[algos[1]]]) != length(ct_cor_algo[[algos[2]]])) {
+        stop("The algorithms do not have the same amount of mutual cell types after filtering.")
+    }
+    if (length(sample_size[[algos[1]]]) != length(sample_size[[algos[2]]])) {
+        stop("The algorithms do not have the same amount of bulk ids")
+    }
+
+    # number of mutual cell types
+    K <- length(ct_cor_algo[[algos[1]]])
+    # amount of samples
+    N <- sample_size[[algos[1]]]
+
+    # Calculate the p_value for z test across mutual cell types
+    delta_z <- ct_cor_algo[[algos[1]]] - ct_cor_algo[[algos[2]]]
+    mean_delta_z <- mean(delta_z)
+    variance <- 2 / (K * (N - 3))
+    se <- sqrt(variance)
+    z_stat <- mean_delta_z / se
+    ct_p_value <- pnorm(z_stat, lower.tail = FALSE)
+
+    # Now we do the z test across samples, using only mutual cell types
+    K <- sample_size[[algos[1]]]
+    N <- length(mutual_celltypes)
+
+    delta_z <- s_cor_algo[[algos[1]]] - s_cor_algo[[algos[2]]]
+    mean_delta_z <- mean(delta_z)
+    variance <- 2 / (K * (N - 3))
+    print(paste("Sample test variance:", variance))
+    se <- sqrt(variance)
+    z_stat <- mean_delta_z / se
+    s_p_value <- pnorm(z_stat, lower.tail = FALSE)
+
+    return(list(
+        celltype_p_value = ct_p_value,
+        sample_p_value = s_p_value,
+        mutual_celltypes = mutual_celltypes
+    ))
+}
 #' plot_all_individual_eval_statistics_bars
 #' @description thi is a function to plot all of the quality scores, R, RMSD,AAD and  cell type wise correlations. Required packages "patchwork", "ggplot2",
 #' "tiydyverse","Stringer"
@@ -304,12 +434,13 @@ plot_all_individual_eval_statistics_bars <- function(proportions,
         "true" = "true",
         "harp" = "Harp",
         "harp_true" = "Harp",
-        "harp_cdeath" = "Harp_(Distorted)",
+        "harp_cdeath" = "Harp_(Cell Type Distorted)",
         "harp_cdeath_uncorrected" = "Harp_(Cell Death Uncorrected)",
+        "harp_noise" = "Harp_(Distorted)",
         "music" = "MuSiC",
         "bp_subtypes" = "BayesPrism",
         "bp_harp" = "BayesPrism_(Harp)",
-        "cibersort_lm22" = "CIBERSORT_(LM22)",
+        "cibersort_lm22" = "CIBERSORTx_(LM22)",
         "cibersort_sc" = "CIBERSORTx_(scRNA-seq)",
         "cibersort_rna" = "CIBERSORTx_(RNA-seq)",
         "cibersort_harp" = "CIBERSORTx_(Harp)",
@@ -359,6 +490,9 @@ plot_all_individual_eval_statistics_bars <- function(proportions,
         }
         if (stringr::str_detect(X, "NK")) {
             return("NK cells")
+        }
+        if (stringr::str_detect(X, "gamma")) {
+            return("Gamma delta T cells")
         } else {
             return(gsub("_", " ", X))
         }
@@ -411,8 +545,8 @@ plot_all_individual_eval_statistics_bars <- function(proportions,
         dplyr::distinct()
     # define the order of all algorithms that we have in the paper
     full_order_of_algos <- c(
-        "Harp", "Harp (True Proportion)", "Harp (Distorted)", "Harp (Cell Death Uncorrected)",
-        "CIBERSORT (LM22)", "CIBERSORTx (scRNA-seq)", "CIBERSORTx (RNA-seq)", "CIBERSORTx (Harp)",
+        "Harp", "Harp (True Proportion)", "Harp (Cell Type Distorted)", "Harp (Distorted)", "Harp (Cell Death Uncorrected)",
+        "CIBERSORTx (LM22)", "CIBERSORTx (scRNA-seq)", "CIBERSORTx (RNA-seq)", "CIBERSORTx (Harp)",
         "BayesPrism", "BayesPrism (Harp)",
         "MuSiC", "DTD"
     )
@@ -427,7 +561,7 @@ plot_all_individual_eval_statistics_bars <- function(proportions,
     # "#BBBBBB"
     # define color palette and filter it to match present algorithms
     custom.col <- c(
-        "#52854C", "#52854C", "#009E73", "#C3D7A4",
+        "#52854C", "#52854C", "#009E73", "#C3D7A4", "#C3D7A4",
         "#FFDB6D", "#F4EDCA", "#C4961A", "#D16103",
         "#293352", "#4E84C4",
         "#CC6677", "#882255"
@@ -1120,7 +1254,7 @@ box_plot_bulk_correlation <- function(
         "music" = "MuSiC",
         "bp_subtypes" = "BayesPrism",
         "bp_harp" = "BayesPrism_(Harp)",
-        "cibersort_lm22" = "CIBERSORT_(LM22)",
+        "cibersort_lm22" = "CIBERSORTx_(LM22)",
         "cibersort_sc" = "CIBERSORTx_(scRNA-seq)",
         "cibersort_rna" = "CIBERSORTx_(RNA-seq)",
         "cibersort_harp" = "CIBERSORTx_(Harp)", # only one of (cibersort_harp, cibersort_harp_lm22) must be in the main data
@@ -1134,7 +1268,7 @@ box_plot_bulk_correlation <- function(
     bulk_correlations_all$algo <- gsub("_", " ", bulk_correlations_all$algo)
     full_order_of_algos <- c(
         "Harp", "Harp (True Proportion)", "Harp (Cell Death)", "Harp (Cell Death Uncorrected)",
-        "CIBERSORT (LM22)", "CIBERSORTx (scRNA-seq)", "CIBERSORTx (RNA-seq)", "CIBERSORTx (Harp)",
+        "CIBERSORTx (LM22)", "CIBERSORTx (scRNA-seq)", "CIBERSORTx (RNA-seq)", "CIBERSORTx (Harp)",
         "BayesPrism", "BayesPrism (Harp)",
         "MuSiC", "DTD"
     )
@@ -1859,7 +1993,7 @@ bulk_expression_correlations_data_frame_first <- function(harp_model,
 
 # this is to recounstruct bulk samples from real data and harp
 #' @export
-predict_bulk_expression <- function(harp_output, data) {
+predict_bulk_expression <- function(harp_output, bulk_pheno_test, bulk_count_test, sc_library) {
     # Extract required components from inputs
     harp_ref <- harp_output$reference_profiles$estimated_reference_second
     harp_c <- harp_output$estimated_c$estimated_c_second
@@ -1869,17 +2003,17 @@ predict_bulk_expression <- function(harp_output, data) {
     gene_names <- rownames(harp_ref)
 
     # Get test samples from data
-    bulk_pheno_test <- data$bulk_pheno_test_true
-    samples <- colnames(bulk_pheno_test)
+    samples <- colnames(bulk_count_test)
+    bulk_pheno_test <- bulk_pheno_test[, samples]
 
     # Calculate true bulk expression
-    true_bulk_expression <- normalize_to_count(as.matrix(data$bulk_counts_test[gene_names, samples]))
+    true_bulk_expression <- normalize_to_count(as.matrix(bulk_count_test[gene_names, samples]))
 
     # Calculate predicted bulk expression using HARP reference profiles
     predicted_bulk_expression_harp <- harp_ref %*% bulk_pheno_test[celltype, samples]
 
     # Compute experimental reference profiles
-    ref_xsc <- compute_reference_harp(sc_library = data$sc_library)
+    ref_xsc <- compute_reference_harp(sc_library = sc_library)
 
     # Calculate predicted bulk expression using experimental reference profiles
     predicted_bulk_expression_experiment <- ref_xsc[gene_names, celltype] %*% bulk_pheno_test[celltype, samples]
@@ -1890,4 +2024,116 @@ predict_bulk_expression <- function(harp_output, data) {
         predicted_bulk_expression_harp = predicted_bulk_expression_harp,
         predicted_bulk_expression_experiment = predicted_bulk_expression_experiment
     ))
+}
+
+#' Function to perform linear regression analysis with significance testing on true vs estimated proportions
+#' @param x true proportions as list
+#' @param y predicted proportions as list
+#' @export
+perform_linear_regression <- function(x, y, celltype = "B") {
+    # Check if inputs are numeric vectors of the same length
+    if (!is.numeric(x) || !is.numeric(y)) {
+        stop("Both x and y must be numeric vectors")
+    }
+
+    if (length(x) != length(y)) {
+        stop("x and y must have the same length")
+    }
+
+    # Create a data frame
+    data <- data.frame(x = x, y = y)
+
+    # Fit linear regression model
+    model <- lm(y ~ x, data = data)
+
+    # Get model summary
+    model_summary <- summary(model)
+
+    # Extract key statistics
+    intercept <- coef(model)[1]
+    slope <- coef(model)[2]
+    r_squared <- model_summary$r.squared
+    adj_r_squared <- model_summary$adj.r.squared
+    f_statistic <- model_summary$fstatistic[1]
+    p_value <- pf(model_summary$fstatistic[1],
+        model_summary$fstatistic[2],
+        model_summary$fstatistic[3],
+        lower.tail = FALSE
+    )
+
+    # Extract residual statistics
+    residual_std_error <- model_summary$sigma
+
+    # Plot the data with regression line
+    plot <- ggplot(data, aes(x = x, y = y)) +
+        geom_point(color = "blue", alpha = 0.6) +
+        geom_smooth(method = "lm", formula = y ~ x, color = "red", se = TRUE) +
+        labs(
+            title = paste(celltype),
+            subtitle = paste(
+                " (R² =", round(r_squared, 4), ", p =", format.pval(p_value, digits = 4), ")"
+            ),
+            x = "True Proportions",
+            y = "Estimated Proportions"
+        ) +
+        theme_minimal()
+
+    # Return the model and additional information as a list
+    return(list(
+        model = model,
+        intercept = intercept,
+        slope = slope,
+        r_squared = r_squared,
+        adj_r_squared = adj_r_squared,
+        f_statistic = f_statistic,
+        p_value = p_value,
+        plot = plot
+    ))
+}
+
+#' @export
+lm_celltypes <- function(proportions) {
+    proportions <- proportions %>% filter(celltype != "extra")
+    proportions_algo <- proportions %>%
+        filter(algo != "true") %>%
+        arrange(algo)
+    proportions_true <- proportions %>% filter(algo == "true")
+    algos <- proportions %>%
+        pull(algo) %>%
+        unique()
+
+    celltypes_true <- proportions_true %>%
+        pull(celltype) %>%
+        unique()
+    results <- list()
+    for (alg in algos) {
+        prop_alg <- proportions_algo %>%
+            filter(algo == alg) %>%
+            arrange(celltype)
+        celltypes_alg <- prop_alg %>%
+            pull(celltype) %>%
+            unique()
+        for (ct in intersect(celltypes_true, celltypes_alg)) {
+            prop_true_ct <- proportions_true %>%
+                filter(celltype == ct) %>%
+                arrange(bulk_id) %>%
+                pull(prp)
+            if (abs(sd(prop_true_ct)) < 1e-6) {
+                print(paste(
+                    "The true proporions of celltype",
+                    ct, "have no variance. So we do not compute metrics here."
+                ))
+                next
+            }
+            prop_alg_ct <- prop_alg %>%
+                filter(celltype == ct) %>%
+                arrange(bulk_id) %>%
+                pull(prp)
+            if (sd(prop_alg_ct) < 1e-6) {
+                print(paste("Expression of algorithm", alg, "for celltype", ct, "is zero"))
+            }
+            results[[paste(alg)]][[paste(ct)]] <- perform_linear_regression(prop_true_ct, prop_alg_ct, celltype = ct)
+        }
+    }
+    return(results)
 }
