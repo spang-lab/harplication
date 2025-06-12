@@ -6,7 +6,7 @@ library(SRSU)
 library(DTD)
 library(stringr)
 
-zimmermann_data <- readRDS("data/source/processed_sdy67_rnaseq_ref.rds")
+zimmermann_data <- readRDS("data/source/sdy67_rnaseq_ref.rds")
 
 # create outputdir
 base_dir <- system.file("data/generated", package = "harplication")

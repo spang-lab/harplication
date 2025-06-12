@@ -5,7 +5,7 @@ library(ggplot2)
 library(SRSU)
 library(DTD)
 library(stringr)
-zimmermann_data <- readRDS("data/source/processed_sdy67_rnaseq_ref.rds")
+zimmermann_data <- readRDS("data/source/sdy67_rnaseq_ref.rds")
 
 base_dir <- system.file("data/generated", package = "harplication")
 real_data_dir <- file.path(base_dir, "real_data")
@@ -22,8 +22,8 @@ if (!dir.exists(output_dir)) {
     dir.create(output_dir)
 }
 # bind the smaples in train and test
-bulk.counts.all <- cbind(zimmermann_data$bulk_counts_train, zimmermann_data$bulk_counts_test)
-bulk.pheno.all <- cbind(zimmermann_data$bulk_pheno_train_true, zimmermann_data$bulk_pheno_test_true)
+bulk.counts.all <- zimmermann_data$bulk_counts
+bulk.pheno.all <- zimmermann_data$bulk_pheno
 
 # create the average reference
 ref_xsc <- compute_reference_harp(sc_library = zimmermann_data$sc_library)
