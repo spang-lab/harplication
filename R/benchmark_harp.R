@@ -40,7 +40,7 @@ compute_bulk_counts_harp <- function(bulk_counts) {
 #' of simulating cell death
 #' cdeath controlls wether we introduce artificial cell death in the "FACS" data
 #' @export
-compute_bulk_pheno_harp <- function(true_prp, sc_library, kill_cells_mean = 1, kill_cells_std = 0) {
+compute_bulk_pheno_harp <- function(true_prp, sc_library, kill_cells_mean = 1, kill_cells_std = 0, noise_mean = 0.9, noise_std = 0.2) {
     # we only use the clusters available in the sc_library
     # as other clusters are not part of the deconvolution
     available_celltypes <- sc_library %>%
@@ -50,8 +50,17 @@ compute_bulk_pheno_harp <- function(true_prp, sc_library, kill_cells_mean = 1, k
     # in order to simulate cell death in FACS measurments we artificially kill
     # some cells by diminishing the proportions in the bulk composition
     death_prp <- kill_cells(true_prp, available_celltypes, kill_cells_mean, kill_cells_std)
+    # we also provide the option to add completely random (non-celltype-specific) noise
+    noise_prp <- noise_prp(true_prp, noise_mean, noise_std, norm = TRUE)
     bulk_pheno_mat_cdeath <- bulk_pheno_to_matrix(death_prp$proportions, available_celltypes)
-    return(list(true = bulk_pheno_mat_true, cdeath = bulk_pheno_mat_cdeath, cell_death_rates = death_prp$cell_death_rates))
+    bulk_pheno_mat_noise <- bulk_pheno_to_matrix(noise_prp$proportions, available_celltypes)
+    return(list(
+        true = bulk_pheno_mat_true,
+        cdeath = bulk_pheno_mat_cdeath,
+        noise = bulk_pheno_mat_noise,
+        cell_death_rates = death_prp$cell_death_rates,
+        noise_rates = noise_prp$rates
+    ))
 }
 
 #' this just converts the proportions tibble to a matrix
@@ -319,7 +328,7 @@ benchmark_dtd <- function(sc_summarized_experiment,
 #' @return a tibble
 #' @export
 
-calculate_bulk_correlation_harp <- function(harp_output, true_bulk_expression, exclude_celltypes = NULL) {
+calculate_bulk_correlation_harp <- function(harp_output, true_bulk_expression, exclude_celltypes = NULL, irun) {
     harp_ref <- harp_output$reference_profiles$estimated_reference_second
     harp_c <- harp_output$estimated_c$estimated_c_second
     celltype <- colnames(harp_ref)
@@ -338,6 +347,6 @@ calculate_bulk_correlation_harp <- function(harp_output, true_bulk_expression, e
     correlations_bulk_harp <- correlations_harp %>%
         as_tibble(rownames = "bulk_id") %>%
         pivot_longer(!bulk_id, values_to = "correlation") %>%
-        add_column(run = 1, algo = "harp") %>%
+        add_column(run = irun, algo = "harp") %>%
         select(-name)
 }

@@ -123,7 +123,7 @@ get_bayesPrism_proportions <- function(bp.res) {
 #' @param algo string a name for the algorithm either "bp_subtypes" or "bp_harp"
 #' @return a tibble
 #' @export
-calculate_bulk_correlation_bp <- function(bp_res, true_bulk_expression, exclude_celltypes = NULL, algo) {
+calculate_bulk_correlation_bp <- function(bp_res, true_bulk_expression, exclude_celltypes = NULL, algo, irun) {
     celltypes <- colnames(bp_res@posterior.initial.cellType@theta)
 
     if (!is.null(exclude_celltypes)) {
@@ -160,6 +160,6 @@ calculate_bulk_correlation_bp <- function(bp_res, true_bulk_expression, exclude_
     correlation_bp <- correlations_bp %>%
         as_tibble(rownames = "bulk_id") %>%
         pivot_longer(!bulk_id, values_to = "correlation") %>%
-        add_column(run = 1, algo = algo) %>%
+        add_column(run = irun, algo = algo) %>%
         select(-name)
 }
