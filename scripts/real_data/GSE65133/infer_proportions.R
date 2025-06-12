@@ -68,7 +68,7 @@ for (irun in 1:num_runs) {
     # Log the current run
     cat(paste0("Starting run ", irun, " with train size: ", train_size, ", test size: ", test_size, "\n"))
     GSE65133_data <- readRDS("data/source/GSE65133_microarray.rds")
-    bulk_cibersort_raw <- readRDS("data/source/CIBERSORT_bulk_counts_gse65133_gs_no_nomalization.rds")
+    bulk_cibersort_raw <- readRDS("data/source/CIBERSORT_bulk_counts_gse65133_unnormalized.rds")
 
     # loading the reference lm22
     sc_library <- GSE65133_data$sc_library
@@ -117,7 +117,7 @@ for (irun in 1:num_runs) {
 
 
     write.table(bulk_cibersort_raw,
-        file = file.path(output_dir, paste0("CIBERSORT_bulk_counts_gse65133_gs_no_nomalization_run_", irun, ".txt")),
+        file = file.path(output_dir, paste0("CIBERSORT_bulk_counts_gse65133_unnormalized_run", irun, ".txt")),
         sep = "\t",
         col.names = FALSE,
         row.names = FALSE
