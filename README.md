@@ -190,15 +190,15 @@ The data sets we used for deconvolution of RNA-seq data are from the following s
 - Micoarray gene expression data from [Robust enumeration of cell subsets from tissue expression profiles](https://www.nature.com/articles/nmeth.3337) by **Newman et al., 2015**, accessible under [GSE65133](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE65133) and the respective flow cytometry data is accessible under [GSE65133](https://www.ncbi.nlm.nih.gov/geo/geo2r/?acc=GSE65133) and in the analysis of [Leveraging heterogeneity across multiple datasets increases cell-mixture deconvolution accuracy and reduces biological and technical biases](https://www.nature.com/articles/s41467-018-07242-6) by **Vallania et al., 2018**. 
 
 The preprocessed data as used in our paper are accessible on [Zenodo](https://doi.org/10.5281/zenodo.14929934). For reproducing the results of the benchmark and anaylsis of our manuscript, please download the following files and move them into `data/source`. 
- - File `processed_sdy67_rnaseq_ref.rds` for the analysis of the deconvolution benchmark of bulkRNA-seq expression data using a reference derived from sortedRNA-seq data.
- - File `processed_sdy67_microarray_ref.rds` for the analysis of the deconvolution benchmark of bulkRNA-seq expression data using a reference derived from microarray data (LM22).
- - File `processed_GSE65133.rds` for analysis of deconvolution benchmark of expression data using a reference derived from microarray data (LM22).
+ - File `sdy67_rnaseq_ref.rds` for the analysis of the deconvolution benchmark of bulkRNA-seq expression data using a reference derived from sortedRNA-seq data.
+ - File `dy67_microarray_ref.rds` for the analysis of the deconvolution benchmark of bulkRNA-seq expression data using a reference derived from microarray data (LM22).
+ - File `GSE65133.rds` for analysis of deconvolution benchmark of expression data using a reference derived from microarray data (LM22).
 
 #### Benchmarking Harp against other deconvolution tools
 
 Here, we run the deconvolution algorithms to benchmark HARP against competing tools, except for CIBERSORTx, as its source code is not available.
 These scripts also generate the input .txt files for CIBERSORTx. 
-Please also download `CIBERSORT_bulk_counts_gse65133_unnomalized_mapped.txt` using the provided link above, which is one additional `.txt` file for input of CIBERSORT(LM22), in our microarray expression benchmark.
+Please also download `CIBERSORT_bulk_counts_gse65133_unnormalized.rds` using the provided link above, which is one additional file for input of CIBERSORTx(LM22), in our microarray expression benchmark.
 
 ```r
 source("scripts/real_data/sdy67_rnaseq_reference/infer_proportions.R")
@@ -208,43 +208,41 @@ source ("scripts/real_data/GSE65133/infer_proportions.R")
 
 If you do not want to run all algorithms you can simply modify the `algorithms <- c()` entry in the respective scripts.
 
-The outputs of this step are saved in `data/generated/sdy67_rnaseq_reference`, `data/generated/real_data/sdy67_microarray_reference` and `data/generated/real_data/GSE65133`. The main outputs are:
+The outputs of this step are saved in `data/generated/sdy67_rnaseq_reference_<>train_<>test_<>run`, `data/generated/real_data/sdy67_microarray_reference_<>train_<>test_<>run` and `data/generated/real_data/GSE65133_<>train_<>test_<>run`. The main outputs are:
 - `proportions_all_<>.rds`: A data frame including all the deconvolution results and the ground-truth data, so it can be used for futhur evaluation, especially for quality metrics related to cell compositions.
 - `infer_proportions_<>.log`: A log file providing further info about the run.
-- `output_harp_run_1.rds`: A list including the training and deconvolution results of Harp.
-- `bp_res_bayesPrism_run_1.rds`: A BayesPrism object containing BayesPrism's default output (see our publication for details).
-- `bp_res_bayesPrism_harp_run_1.rds`: A BayesPrism object containing the output of BayesPrism using the Harp reference.
+- `output_harp_run_<>.rds`: A list including the training and deconvolution results of Harp.
+- `bp_res_bayesPrism_run_<>.rds`: A BayesPrism object containing BayesPrism's default output (see our publication for details).
+- `bp_res_bayesPrism_harp_run_<>.rds`: A BayesPrism object containing the output of BayesPrism using the Harp reference.
 
 The inputs for CIBERSORTx, genetated by the scripts, are:
-- `CIBERSORTx_bulks_run_1.txt`: A file containing bulk expression profiles for deconvolution.
-- `CIBERSORTx_sigmatrix_harp_reference_run_1.txt`: A file providing the harp reference for CIBERSORTx.
-- `CIBERSORTx_refsample_run_1.txt`, `CIBERSORTx_phenotype_classes_run_1.txt`: Files to generate the signature matrix by CIBERSORTx using sorted RNA-seq data. The microarray based reference (LM22) is available on the CIBERSORTx website.
+- `CIBERSORTx_bulks_run_<>.txt`: A file containing bulk expression profiles for deconvolution.
+- `CIBERSORT_bulk_counts_gse65133_unnormalized_run_`: A file containing micorarry bulk expression profiles for deconvolution using LM22.
+- `CIBERSORTx_sigmatrix_harp_reference_run_<>.txt` or `CIBERSORTx_harpref_run_<>`: A file providing the harp reference for CIBERSORTx for bulk RNA-seq or microarray expression data.
+- `CIBERSORTx_refsample_run_<>.txt`: Files to generate the signature matrix by CIBERSORTx using sorted RNA-seq data. The microarray based reference (LM22) is available on the CIBERSORTx website.
 
 #### Evaluation of the benchmark
 
-The plots of the results related to **cell compositions quality scores** can be generated by:
+The plots of the results related to **cell compositions quality scores**  and  **bulk recounstruction performance** can be generated by:
 ```r
-source("scripts/real_data/sdy67_rnaseq_reference/evaluate_proportions.R")
-source("scripts/real_data/sdy67_microarray_reference/evaluate_proportions.R")
-source ("scripts/real_data/GSE65133/evaluate_proportions.R")
+source("scripts/real_data/sdy67_rnaseq_reference_<>train_<>test_<>run/evaluate_proportions_bulks.R")
+source("scripts/real_data/sdy67_microarray_reference_<>train_<>test_<>run/evaluate_proportions_bulks.R")
+source ("scripts/real_data/GSE65133_<>train_<>test_<>run/evaluate_proportions_bulks.R")
 ```
-and the plots regarding the **bulk recounstruction performance** are generated by:
-```r
-source("scripts/real_data/sdy67_rnaseq_reference/evaluate_bulks.R")
-source("scripts/real_data/sdy67_microarray_reference/evaluate_bulks.R")
-source ("scripts/real_data/GSE65133/evaluate_bulks.R")
-```
+
 However, prior to this step, you first need to post-process the output of CIBERSORTx.
 - For analysis of the bulk RNA-seq expression data, 
-please put the .txt files from the CIBERSORTx website in `data/generated/sdy67_rnaseq_reference` and add the file names to `scripts/real_data/post_processing_CIBERSORTx_rnaseq/infer_sdy67_cibersort.R`, according to the comments in the script.
+
+If you do not already have results using the CIBERSORTx Docker image (described above), please place the `.txt` files from the CIBERSORTx output into the `data/generated/sdy67_rnaseq_reference_<>train_<>test_<>run` and `data/generated/real_data/sdy67_microarray_reference_<>train_<>test_<>run` directory. Ensure that the file name patterns match those expected by the following scripts, as indicated by the comments within each script: `scripts/real_data/post_processing_CIBERSORTx_rnaseq/infer_sdy67_rnaseq_cibersortx.R` and `scripts/real_data/post_processing_CIBERSORTx_rnaseq/infer_sdy67_microarray_cibersortx.R`.
 
 - For analysis of the microarray expression data, 
-please put the .txt files from the CIBERSORTx website in `data/generated/real_data/GSE65133` and add the file names to `scripts/real_data/post_processing_CIBERSORTx_microarray/infer_GSE65133_cibersortx.R`
- , according to the comments in the script.
+please place the `.txt` files from the CIBERSORTx output in `data/generated/real_data/GSE65133_<>train_<>test_<>run` and make sure the filenames align with the expectations outlined in the script `scripts/real_data/post_processing_CIBERSORTx_microarray/infer_GSE65133_cibersortx.R`
+ , according to the comments within the script.
 
 Then the post-processed files for CIBERSORTx can be produced by:
 ```r
-source("scripts/real_data/post_processing_CIBERSORTx_rnaseq/infer_sdy67_cibersortx.R")
+source("scripts/real_data/post_processing_CIBERSORTx_rnaseq/infer_sdy67_microarray_cibersortx.R")
+source("scripts/real_data/post_processing_CIBERSORTx_rnaseq/infer_sdy67_rnaseq_cibersortx.R")
 source("scripts/real_data/post_processing_CIBERSORTx_microarray/infer_GSE65133_cibersortx.R")
 ```
 
@@ -258,9 +256,11 @@ In the following, we reproduce the remaining plots from the real data analysis i
 ```r
 source("scripts/real_data/UMAP/umap_bulk_into.R")
 ```
-- The UMAP of reconstructed bulk samples using a reference from HARP and a sorted RNA-seq-derived reference, compared to observed bulk RNA-seq data, as shown in the results section of our publication.
+- The UMAP of reconstructed bulk samples using a reference from HARP and the reference from data , compared to observed bulk expression data, as shown in the results section of our publication.
 ```r
-source("scripts/real_data/UMAP/umap_bulks.R")
+source("scripts/real_data/UMAP/umap_bulks_sdy67_rnaseq.R")
+source("scripts/real_data/UMAP/umap_bulks_sdy67_microarray.R")
+source("scripts/real_data/UMAP/umap_bulks_lm22_GSE65133.R")
 ```
 ##### UMAP of cell references
 The UMAP represents the sorted RNA-seq cell profiles and the averaged reference. This plot is shown in the appendix of our publication.
