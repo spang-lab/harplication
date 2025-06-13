@@ -18,8 +18,8 @@ library(devtools)
 devtools::install_github("spang-lab/harp")
 ```
 
-The input data for reproducing the results of the simulations is provided under https://doi.org/10.5281/zenodo.10568550.\
-The input data for the real world case studies is provided under https://doi.org/10.5281/zenodo.14929934.
+The input data for reproducing the results of the simulations is provided under https://doi.org/10.5281/zenodo.10568550. 
+The input data for the real world case studies is provided under https://doi.org/10.5281/zenodo.15650057.
 
 
 ## Repo Structure
