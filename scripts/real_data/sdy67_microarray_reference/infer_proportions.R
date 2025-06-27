@@ -12,7 +12,6 @@ library(gridExtra)
 library(ggplot2)
 
 algorithms <- c("Harp", "bp_subtypes", "cibersort")
-
 # library(parallel)
 if ("Harp" %in% algorithms) {
     library(harp)
@@ -31,8 +30,8 @@ if ("music" %in% algorithms) {
     library(MuSiC)
 }
 num_runs <- 5 # Change this to the number of runs you want
-
 # Fixed sizes for all runs
+
 train_size <- 150 #  update this for the number of train samples #20
 test_size <- 100 #  update this for the number of test samples #100
 n_fold <- 5 # this is the number of folds for harp training. when 20 sample training set this to 4

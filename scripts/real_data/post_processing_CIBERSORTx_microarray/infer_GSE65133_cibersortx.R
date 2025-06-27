@@ -2,6 +2,11 @@
 devtools::document()
 library(tidyverse)
 library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(stringr)
+library(patchwork)
+library(uwot)
 library(harp)
 
 train_size <- 12 # update this for the number of train samples

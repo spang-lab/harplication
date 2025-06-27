@@ -1,5 +1,4 @@
 # benchmarking the performance of HARP against BayesPrism on microarray data- input files for cibersortx are provided seprately
-
 # DEPENDENCIES
 devtools::document()
 
@@ -13,7 +12,6 @@ library(DTD)
 
 # select algorithms to be benchmarked
 algorithms <- c("Harp", "bp_subtypes", "cibersort")
-
 if ("Harp" %in% algorithms) {
     library(harp)
 }
@@ -30,12 +28,6 @@ if ("music" %in% algorithms) {
     library(SingleCellExperiment)
     library(MuSiC)
 }
-# creating output dir
-base_dir <- system.file("data/generated", package = "harplication")
-dir.create(file.path(base_dir, "real_data"))
-output_dir <- file.path(base_dir, "real_data", "GSE65133")
-dir.create(output_dir)
-
 
 num_runs <- 5 # Change this to the number of runs you want
 
@@ -43,11 +35,9 @@ num_runs <- 5 # Change this to the number of runs you want
 train_size <- 12
 test_size <- 8
 n_fold <- 2
-# # creating output dir
 
-# # creating output dir
+# creating output dir
 base_dir <- system.file("data/generated", package = "harplication")
-
 dir.create(file.path(base_dir, "real_data"))
 output_dir <- file.path(base_dir, "real_data", paste0("GSE65133_", train_size, "train_", test_size, "test_", num_runs, "run"))
 dir.create(output_dir)
