@@ -3,7 +3,7 @@
 Applying **harp** to real world and simulated data, in order to show its advantage compared to established deconvolution tools.
 
 <div style="text-align: center">
-    <img src="harp_schematic.png" width=500 alt="harpschematics"/>
+    <img src="harp_schematic.jpg" width=500 alt="harpschematics"/>
 </div>
 
 For detailed explanation and examples of the main package functions of harp we refer to the corresponding R package
